@@ -1,4 +1,12 @@
 require('dotenv').config();
+
+console.log('=== ENV VARS ===');
+console.log('SHOPIFY_CLIENT_ID:', process.env.SHOPIFY_CLIENT_ID);
+console.log('SHOPIFY_CLIENT_SECRET:', process.env.SHOPIFY_CLIENT_SECRET ? 'SET' : 'UNDEFINED');
+console.log('SHOPIFY_STORE:', process.env.SHOPIFY_STORE);
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'UNDEFINED');
+console.log('=== END ENV VARS ===');
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
