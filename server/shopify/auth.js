@@ -1,9 +1,42 @@
 const https = require('https');
 const { config } = require('../config');
+const db = require('../db/connection');
 
 let cachedToken = null;
-let tokenExpiresAt = 0;
-let refreshPromise = null;
+
+/**
+ * Get a valid Shopify access token.
+ *
+ * 1. Return cached token if we already fetched it this process
+ * 2. Check shopify_config table for a stored permanent token (from OAuth authorization code flow)
+ * 3. Fall back to client credentials grant if no stored token exists
+ */
+async function getAccessToken() {
+  if (cachedToken) {
+    return cachedToken;
+  }
+
+  // Check database for stored permanent token
+  try {
+    const result = await db.query(
+      `SELECT value FROM shopify_config WHERE key = 'access_token' LIMIT 1`
+    );
+    if (result.rows.length > 0 && result.rows[0].value) {
+      cachedToken = result.rows[0].value;
+      console.log('Using stored permanent access token');
+      return cachedToken;
+    }
+  } catch (err) {
+    // Table may not exist yet on first boot — fall through to client credentials
+    console.warn('Could not read stored token:', err.message);
+  }
+
+  // Fallback: client credentials grant
+  console.log('No stored token found, trying client credentials grant');
+  const response = await requestToken();
+  cachedToken = response.access_token;
+  return cachedToken;
+}
 
 function requestToken() {
   const cfg = config();
@@ -45,38 +78,6 @@ function requestToken() {
     req.write(postData);
     req.end();
   });
-}
-
-/**
- * Get a valid access token. Caches the token and refreshes ~1 hour before expiry.
- * Uses a mutex (refreshPromise) to prevent race conditions when multiple
- * syncs trigger simultaneously — only one token request fires, others await it.
- */
-async function getAccessToken() {
-  const now = Date.now();
-  const bufferMs = 60 * 60 * 1000;
-
-  if (cachedToken && now < tokenExpiresAt - bufferMs) {
-    return cachedToken;
-  }
-
-  if (refreshPromise) {
-    return refreshPromise;
-  }
-
-  refreshPromise = (async () => {
-    try {
-      const response = await requestToken();
-      cachedToken = response.access_token;
-      const expiresIn = response.expires_in || 86400;
-      tokenExpiresAt = Date.now() + expiresIn * 1000;
-      return cachedToken;
-    } finally {
-      refreshPromise = null;
-    }
-  })();
-
-  return refreshPromise;
 }
 
 module.exports = { getAccessToken };

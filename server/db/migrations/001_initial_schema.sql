@@ -65,3 +65,11 @@ CREATE TABLE IF NOT EXISTS sync_log (
 
 CREATE INDEX IF NOT EXISTS idx_sync_log_type ON sync_log(sync_type);
 CREATE INDEX IF NOT EXISTS idx_sync_log_started ON sync_log(started_at);
+
+-- shopify_config: store OAuth tokens and settings
+CREATE TABLE IF NOT EXISTS shopify_config (
+  id SERIAL PRIMARY KEY,
+  key VARCHAR(100) UNIQUE NOT NULL,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
