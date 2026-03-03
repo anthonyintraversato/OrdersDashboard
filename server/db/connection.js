@@ -1,12 +1,14 @@
 const { Pool } = require('pg');
+const { config } = require('../config');
 
 let pool = null;
 
 function getPool() {
   if (!pool) {
+    const cfg = config();
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionString: cfg.databaseUrl,
+      ssl: cfg.isProduction ? { rejectUnauthorized: false } : false,
     });
   }
   return pool;

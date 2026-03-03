@@ -1,23 +1,22 @@
 const https = require('https');
+const { config } = require('../config');
 
 let cachedToken = null;
 let tokenExpiresAt = 0;
 let refreshPromise = null;
 
 function requestToken() {
-  const store = process.env.SHOPIFY_STORE;
-  const clientId = process.env.SHOPIFY_CLIENT_ID;
-  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+  const cfg = config();
 
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: cfg.shopifyClientId,
+      client_secret: cfg.shopifyClientSecret,
       grant_type: 'client_credentials',
     });
 
     const options = {
-      hostname: store,
+      hostname: cfg.shopifyStore,
       path: '/admin/oauth/access_token',
       method: 'POST',
       headers: {
@@ -55,14 +54,12 @@ function requestToken() {
  */
 async function getAccessToken() {
   const now = Date.now();
-  // Refresh 1 hour before expiry to avoid edge cases
   const bufferMs = 60 * 60 * 1000;
 
   if (cachedToken && now < tokenExpiresAt - bufferMs) {
     return cachedToken;
   }
 
-  // If a refresh is already in flight, wait for it (prevents race condition)
   if (refreshPromise) {
     return refreshPromise;
   }
@@ -71,7 +68,6 @@ async function getAccessToken() {
     try {
       const response = await requestToken();
       cachedToken = response.access_token;
-      // Shopify client credentials tokens expire in 24h (86400 seconds)
       const expiresIn = response.expires_in || 86400;
       tokenExpiresAt = Date.now() + expiresIn * 1000;
       return cachedToken;

@@ -1,6 +1,7 @@
 const https = require('https');
 const { getAccessToken } = require('./auth');
 const db = require('../db/connection');
+const { config } = require('../config');
 
 const SOURCE_NAME_CHANNELS = {
   '291806642177': 'GOAT',
@@ -18,12 +19,10 @@ const SOURCE_NAME_CHANNELS = {
 function detectChannel(order) {
   const sourceName = order.source_name || '';
 
-  // Direct match
   if (SOURCE_NAME_CHANNELS[sourceName]) {
     return SOURCE_NAME_CHANNELS[sourceName];
   }
 
-  // Case-insensitive match
   const lower = sourceName.toLowerCase();
   for (const [key, channel] of Object.entries(SOURCE_NAME_CHANNELS)) {
     if (key.toLowerCase() === lower) {
@@ -31,7 +30,6 @@ function detectChannel(order) {
     }
   }
 
-  // Fallback: check note_attributes for marketplace info
   if (order.note_attributes && Array.isArray(order.note_attributes)) {
     for (const attr of order.note_attributes) {
       const name = (attr.name || '').toLowerCase();
@@ -50,13 +48,11 @@ function detectChannel(order) {
 }
 
 function detectLocation(order) {
-  const pdxId = process.env.SHOPIFY_PDX_LOCATION_ID;
-  const laId = process.env.SHOPIFY_LA_LOCATION_ID;
-
+  const cfg = config();
   if (order.fulfillments && order.fulfillments.length > 0) {
     const locId = String(order.fulfillments[0].location_id);
-    if (locId === pdxId) return 'PDX';
-    if (locId === laId) return 'LA';
+    if (locId === cfg.shopifyPdxLocationId) return 'PDX';
+    if (locId === cfg.shopifyLaLocationId) return 'LA';
   }
   return 'PDX';
 }
@@ -66,11 +62,11 @@ function sleep(ms) {
 }
 
 function shopifyGet(path, token, retries = 2) {
-  const store = process.env.SHOPIFY_STORE;
+  const cfg = config();
 
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: store,
+      hostname: cfg.shopifyStore,
       path,
       method: 'GET',
       headers: {
@@ -83,7 +79,6 @@ function shopifyGet(path, token, retries = 2) {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', async () => {
-        // Handle rate limiting (429) with retry
         if (res.statusCode === 429 && retries > 0) {
           const retryAfter = parseFloat(res.headers['retry-after']) || 2;
           console.log(`Rate limited, retrying after ${retryAfter}s...`);
@@ -100,7 +95,6 @@ function shopifyGet(path, token, retries = 2) {
           return reject(new Error(`Shopify API ${res.statusCode}: ${data}`));
         }
 
-        // Check rate limit proximity — throttle if approaching limit
         const callLimit = res.headers['x-shopify-shop-api-call-limit'];
         if (callLimit) {
           const [used, max] = callLimit.split('/').map(Number);
@@ -154,26 +148,22 @@ async function syncShopifyOrders() {
   const token = await getAccessToken();
   const today = new Date().toISOString().split('T')[0];
 
-  // Create sync log entry
   const logResult = await db.query(
     `INSERT INTO sync_log (sync_type, status, started_at) VALUES ('shopify_orders', 'in_progress', NOW()) RETURNING id`
   );
   const syncLogId = logResult.rows[0].id;
 
   try {
-    // Fetch unfulfilled orders
     const unfulfilled = await fetchAllOrders(
       '/admin/api/2024-10/orders.json?status=open&fulfillment_status=unfulfilled&limit=250',
       token
     );
 
-    // Fetch partially fulfilled orders
     const partial = await fetchAllOrders(
       '/admin/api/2024-10/orders.json?status=open&fulfillment_status=partial&limit=250',
       token
     );
 
-    // Fetch cancelled orders from last 7 days (for defect detection)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const cancelled = await fetchAllOrders(
@@ -239,7 +229,6 @@ async function syncShopifyOrders() {
       processed++;
     }
 
-    // Update sync log
     await db.query(
       `UPDATE sync_log SET status = 'success', records_processed = $1, completed_at = NOW() WHERE id = $2`,
       [processed, syncLogId]

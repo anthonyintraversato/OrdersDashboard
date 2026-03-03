@@ -2,12 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const { config } = require('./config');
 
 const ordersRoutes = require('./routes/orders');
 const syncRoutes = require('./routes/sync');
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
@@ -17,7 +17,8 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/sync', syncRoutes);
 
 // Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
+const cfg = config();
+if (cfg.isProduction) {
   const clientDist = path.join(__dirname, '..', 'client', 'dist');
   app.use(express.static(clientDist));
   app.get('*', (req, res) => {
@@ -25,6 +26,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(cfg.port, () => {
+  console.log(`Server running on port ${cfg.port}`);
 });

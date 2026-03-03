@@ -2,11 +2,13 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const { config } = require('../config');
 
 async function migrate() {
+  const cfg = config();
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionString: cfg.databaseUrl,
+    ssl: cfg.isProduction ? { rejectUnauthorized: false } : false,
   });
 
   const migrationsDir = path.join(__dirname, 'migrations');
