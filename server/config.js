@@ -16,8 +16,8 @@ function config() {
   return {
     databaseUrl:         e(['DATABASE', 'URL'].join('_')),
     shopifyStore:        e(pfx('STORE')),
-    shopifyClientId:     e(pfx('CLIENT_ID')),
-    shopifyClientSecret: e(pfx('CLIENT_SECRET')),
+    shopifyClientId:     e(pfx('CLIENT_ID')) || e(pfx('API_KEY')),
+    shopifyClientSecret: e(pfx('CLIENT_SECRET')) || e(pfx('API_SECRET')),
     shopifyPdxLocationId:e(pfx('PDX_LOCATION_ID')),
     shopifyLaLocationId: e(pfx('LA_LOCATION_ID')),
     nodeEnv:             e('NODE_ENV'),

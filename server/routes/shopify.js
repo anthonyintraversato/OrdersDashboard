@@ -40,6 +40,16 @@ router.get('/callback', async (req, res) => {
 
   const cfg = config();
 
+  console.log('[OAuth Callback] ENV CHECK — shopifyStore:', cfg.shopifyStore);
+  console.log('[OAuth Callback] ENV CHECK — shopifyClientId:', cfg.shopifyClientId ? '(set)' : 'UNDEFINED');
+  console.log('[OAuth Callback] ENV CHECK — shopifyClientSecret:', cfg.shopifyClientSecret ? '(set)' : 'UNDEFINED');
+
+  if (!cfg.shopifyClientId || !cfg.shopifyClientSecret) {
+    const msg = 'Missing Shopify credentials. Check that SHOPIFY_CLIENT_ID (or SHOPIFY_API_KEY) and SHOPIFY_CLIENT_SECRET (or SHOPIFY_API_SECRET) are set in Railway.';
+    console.error('[OAuth Callback]', msg);
+    return res.status(500).send(msg);
+  }
+
   try {
     // Exchange the authorization code for a permanent access token
     const tokenData = await new Promise((resolve, reject) => {
