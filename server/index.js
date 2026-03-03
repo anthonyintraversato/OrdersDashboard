@@ -7,6 +7,7 @@ const { runMigrations } = require('./db/connection');
 
 const ordersRoutes = require('./routes/orders');
 const syncRoutes = require('./routes/sync');
+const shopifyRoutes = require('./routes/shopify');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 // API routes
 app.use('/api/orders', ordersRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/shopify', shopifyRoutes);
 
 // Serve frontend in production
 const cfg = config();
