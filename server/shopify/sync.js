@@ -1,10 +1,6 @@
 const https = require('https');
 const { getAccessToken } = require('./auth');
-const pool = require('../db/connection');
-
-const STORE = process.env.SHOPIFY_STORE;
-const PDX_LOCATION_ID = process.env.SHOPIFY_PDX_LOCATION_ID;
-const LA_LOCATION_ID = process.env.SHOPIFY_LA_LOCATION_ID;
+const db = require('../db/connection');
 
 const SOURCE_NAME_CHANNELS = {
   '291806642177': 'GOAT',
@@ -54,13 +50,14 @@ function detectChannel(order) {
 }
 
 function detectLocation(order) {
-  // Check fulfillment orders or line items for location
+  const pdxId = process.env.SHOPIFY_PDX_LOCATION_ID;
+  const laId = process.env.SHOPIFY_LA_LOCATION_ID;
+
   if (order.fulfillments && order.fulfillments.length > 0) {
     const locId = String(order.fulfillments[0].location_id);
-    if (locId === PDX_LOCATION_ID) return 'PDX';
-    if (locId === LA_LOCATION_ID) return 'LA';
+    if (locId === pdxId) return 'PDX';
+    if (locId === laId) return 'LA';
   }
-  // Default to PDX if we can't determine
   return 'PDX';
 }
 
@@ -69,9 +66,11 @@ function sleep(ms) {
 }
 
 function shopifyGet(path, token, retries = 2) {
+  const store = process.env.SHOPIFY_STORE;
+
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: STORE,
+      hostname: store,
       path,
       method: 'GET',
       headers: {
@@ -106,7 +105,7 @@ function shopifyGet(path, token, retries = 2) {
         if (callLimit) {
           const [used, max] = callLimit.split('/').map(Number);
           if (used >= max - 4) {
-            await sleep(1000); // Back off when near limit
+            await sleep(1000);
           }
         }
 
@@ -130,7 +129,6 @@ function getNextPageUrl(linkHeader) {
   for (const part of parts) {
     const match = part.match(/<([^>]+)>;\s*rel="next"/);
     if (match) {
-      // Extract just the path from the full URL
       const url = new URL(match[1]);
       return url.pathname + url.search;
     }
@@ -157,7 +155,7 @@ async function syncShopifyOrders() {
   const today = new Date().toISOString().split('T')[0];
 
   // Create sync log entry
-  const logResult = await pool.query(
+  const logResult = await db.query(
     `INSERT INTO sync_log (sync_type, status, started_at) VALUES ('shopify_orders', 'in_progress', NOW()) RETURNING id`
   );
   const syncLogId = logResult.rows[0].id;
@@ -205,7 +203,7 @@ async function syncShopifyOrders() {
         variant_title: item.variant_title,
       }));
 
-      await pool.query(
+      await db.query(
         `INSERT INTO orders_snapshot
           (shopify_order_id, order_number, channel, created_at, status, total_price,
            line_items, line_items_count, location, customer_name, cancel_reason, source_name, snapshot_date)
@@ -242,14 +240,14 @@ async function syncShopifyOrders() {
     }
 
     // Update sync log
-    await pool.query(
+    await db.query(
       `UPDATE sync_log SET status = 'success', records_processed = $1, completed_at = NOW() WHERE id = $2`,
       [processed, syncLogId]
     );
 
     return { success: true, processed, unfulfilled: unfulfilled.length, partial: partial.length, cancelled: cancelled.length };
   } catch (error) {
-    await pool.query(
+    await db.query(
       `UPDATE sync_log SET status = 'error', errors = $1, completed_at = NOW() WHERE id = $2`,
       [JSON.stringify({ message: error.message }), syncLogId]
     );

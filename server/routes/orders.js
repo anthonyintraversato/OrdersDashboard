@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db/connection');
+const db = require('../db/connection');
 
 // Pacific Time offset helper (handles PST/PDT)
 function toPacific(date) {
@@ -128,7 +128,7 @@ router.get('/unfulfilled', async (req, res) => {
     const sortDir = direction === 'desc' ? 'DESC' : 'ASC';
     query += ` ORDER BY ${sortCol} ${sortDir}`;
 
-    const result = await pool.query(query, params);
+    const result = await db.query(query, params);
 
     // Enrich with SLA data
     const orders = result.rows.map(row => {
@@ -159,7 +159,7 @@ router.get('/summary', async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
-    const result = await pool.query(`
+    const result = await db.query(`
       SELECT * FROM orders_snapshot
       WHERE snapshot_date = $1
         AND status IN ('unfulfilled', 'partially_fulfilled')

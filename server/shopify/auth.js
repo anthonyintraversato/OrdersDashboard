@@ -4,20 +4,20 @@ let cachedToken = null;
 let tokenExpiresAt = 0;
 let refreshPromise = null;
 
-const STORE = process.env.SHOPIFY_STORE;
-const CLIENT_ID = process.env.SHOPIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.SHOPIFY_CLIENT_SECRET;
-
 function requestToken() {
+  const store = process.env.SHOPIFY_STORE;
+  const clientId = process.env.SHOPIFY_CLIENT_ID;
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+
   return new Promise((resolve, reject) => {
     const postData = JSON.stringify({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       grant_type: 'client_credentials',
     });
 
     const options = {
-      hostname: STORE,
+      hostname: store,
       path: '/admin/oauth/access_token',
       method: 'POST',
       headers: {
