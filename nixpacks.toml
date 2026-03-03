@@ -8,4 +8,4 @@ cmds = ["npm install", "npm install --prefix client --include=dev"]
 cmds = ["npm run build --prefix client"]
 
 [start]
-cmd = "node server/db/migrate.js && node server/index.js"
+cmd = "node server/index.js"

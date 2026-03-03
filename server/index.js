@@ -3,6 +3,7 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const { config } = require('./config');
+const { runMigrations } = require('./db/connection');
 
 const ordersRoutes = require('./routes/orders');
 const syncRoutes = require('./routes/sync');
@@ -26,6 +27,14 @@ if (cfg.isProduction) {
   });
 }
 
-app.listen(cfg.port, () => {
-  console.log(`Server running on port ${cfg.port}`);
-});
+// Run migrations then start server
+runMigrations()
+  .then(() => {
+    app.listen(cfg.port, () => {
+      console.log(`Server running on port ${cfg.port}`);
+    });
+  })
+  .catch(err => {
+    console.error('Migration failed:', err);
+    process.exit(1);
+  });
