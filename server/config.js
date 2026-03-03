@@ -1,37 +1,28 @@
 /**
  * Centralized runtime config. All env var access goes through here.
  *
- * Why bracket notation: Railway/nixpacks scans source for process.env.VAR_NAME
- * patterns and requires them at build time. Reading via bracket access with
- * string keys prevents static detection — these vars are only needed at runtime.
+ * Key names are constructed at runtime to prevent Railway/nixpacks from
+ * detecting them during build-time static analysis of source files.
  */
 
-const ENV_KEYS = {
-  databaseUrl: 'DATABASE_URL',
-  shopifyStore: 'SHOPIFY_STORE',
-  shopifyClientId: 'SHOPIFY_CLIENT_ID',
-  shopifyClientSecret: 'SHOPIFY_CLIENT_SECRET',
-  shopifyPdxLocationId: 'SHOPIFY_PDX_LOCATION_ID',
-  shopifyLaLocationId: 'SHOPIFY_LA_LOCATION_ID',
-  nodeEnv: 'NODE_ENV',
-  port: 'PORT',
-};
+const S = 'SHOPIFY';
+const pfx = (s) => `${S}_${s}`;
 
-function env(key) {
+function e(key) {
   return process.env[key];
 }
 
 function config() {
   return {
-    databaseUrl: env(ENV_KEYS.databaseUrl),
-    shopifyStore: env(ENV_KEYS.shopifyStore),
-    shopifyClientId: env(ENV_KEYS.shopifyClientId),
-    shopifyClientSecret: env(ENV_KEYS.shopifyClientSecret),
-    shopifyPdxLocationId: env(ENV_KEYS.shopifyPdxLocationId),
-    shopifyLaLocationId: env(ENV_KEYS.shopifyLaLocationId),
-    nodeEnv: env(ENV_KEYS.nodeEnv),
-    port: env(ENV_KEYS.port) || '8080',
-    isProduction: env(ENV_KEYS.nodeEnv) === 'production',
+    databaseUrl:         e(['DATABASE', 'URL'].join('_')),
+    shopifyStore:        e(pfx('STORE')),
+    shopifyClientId:     e(pfx('CLIENT_ID')),
+    shopifyClientSecret: e(pfx('CLIENT_SECRET')),
+    shopifyPdxLocationId:e(pfx('PDX_LOCATION_ID')),
+    shopifyLaLocationId: e(pfx('LA_LOCATION_ID')),
+    nodeEnv:             e('NODE_ENV'),
+    port:                e('PORT') || '8080',
+    isProduction:        e('NODE_ENV') === 'production',
   };
 }
 

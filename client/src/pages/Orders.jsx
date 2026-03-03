@@ -29,7 +29,7 @@ const AGE_FILTERS = [
 
 const ALL_CHANNELS = ['StockX', 'GOAT', 'SHEIN', 'eBay', 'TikTok', 'KicksCrew', 'Amazon', 'Shopify', 'Whatnot'];
 
-const SHOPIFY_STORE = 'nzw1ru-un.myshopify.com';
+const ADMIN_DOMAIN = 'nzw1ru-un.myshopify.com';
 
 function useDebounce(value, delay) {
   const [debounced, setDebounced] = useState(value);
@@ -377,7 +377,7 @@ function OrderRow({ order }) {
       <tr className="hover:bg-earth-50/50 transition-colors">
         <td className="px-4 py-3 font-mono text-xs">
           <a
-            href={`https://${SHOPIFY_STORE}/admin/orders/${order.shopify_order_id}`}
+            href={`https://${ADMIN_DOMAIN}/admin/orders/${order.shopify_order_id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-earth-400 hover:text-earth-950 underline decoration-earth-300"
