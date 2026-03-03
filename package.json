@@ -1,0 +1,20 @@
+{
+  "name": "orders-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"node server/index.js\" \"npm run dev --prefix client\"",
+    "build": "npm install --prefix client && npm run build --prefix client",
+    "start": "node server/index.js",
+    "migrate": "node server/db/migrate.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

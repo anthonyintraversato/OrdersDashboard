@@ -1,0 +1,11 @@
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm install", "npm install --prefix client --include=dev"]
+
+[phases.build]
+cmds = ["npm run build --prefix client"]
+
+[start]
+cmd = "node server/db/migrate.js && node server/index.js"
