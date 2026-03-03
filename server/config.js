@@ -1,28 +1,18 @@
 /**
- * Centralized runtime config. All env var access goes through here.
- *
- * Key names are constructed at runtime to prevent Railway/nixpacks from
- * detecting them during build-time static analysis of source files.
+ * Centralized runtime config.
  */
-
-const S = 'SHOPIFY';
-const pfx = (s) => `${S}_${s}`;
-
-function e(key) {
-  return process.env[key];
-}
-
 function config() {
+  const env = process.env;
   return {
-    databaseUrl:         e(['DATABASE', 'URL'].join('_')),
-    shopifyStore:        e(pfx('STORE')),
-    shopifyClientId:     e(pfx('CLIENT_ID')) || e(pfx('API_KEY')),
-    shopifyClientSecret: e(pfx('CLIENT_SECRET')) || e(pfx('API_SECRET')),
-    shopifyPdxLocationId:e(pfx('PDX_LOCATION_ID')),
-    shopifyLaLocationId: e(pfx('LA_LOCATION_ID')),
-    nodeEnv:             e('NODE_ENV'),
-    port:                e('PORT') || '8080',
-    isProduction:        e('NODE_ENV') === 'production',
+    databaseUrl:         env.DATABASE_URL,
+    shopifyStore:        env.SHOPIFY_STORE,
+    shopifyClientId:     env.SHOPIFY_CLIENT_ID,
+    shopifyClientSecret: env.SHOPIFY_CLIENT_SECRET,
+    shopifyPdxLocationId:env.SHOPIFY_PDX_LOCATION_ID,
+    shopifyLaLocationId: env.SHOPIFY_LA_LOCATION_ID,
+    nodeEnv:             env.NODE_ENV,
+    port:                env.PORT || '8080',
+    isProduction:        env.NODE_ENV === 'production',
   };
 }
 

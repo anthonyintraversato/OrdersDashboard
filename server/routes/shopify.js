@@ -45,7 +45,7 @@ router.get('/callback', async (req, res) => {
   console.log('[OAuth Callback] ENV CHECK — shopifyClientSecret:', cfg.shopifyClientSecret ? '(set)' : 'UNDEFINED');
 
   if (!cfg.shopifyClientId || !cfg.shopifyClientSecret) {
-    const msg = 'Missing Shopify credentials. Check that SHOPIFY_CLIENT_ID (or SHOPIFY_API_KEY) and SHOPIFY_CLIENT_SECRET (or SHOPIFY_API_SECRET) are set in Railway.';
+    const msg = 'Missing Shopify credentials. Check that SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET are set in Railway.';
     console.error('[OAuth Callback]', msg);
     return res.status(500).send(msg);
   }
